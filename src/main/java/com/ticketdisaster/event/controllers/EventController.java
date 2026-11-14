@@ -11,8 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ticketdisaster.event.constants.ApiConstants;
 import com.ticketdisaster.event.dto.request.CreateEventAndSeatsRequest;
 import com.ticketdisaster.event.dto.request.HoldSeatsRequest;
+import com.ticketdisaster.event.dto.response.EventResponse;
 import com.ticketdisaster.event.interfaces.EventService;
-import com.ticketdisaster.event.models.EventEntity;
+import com.ticketdisaster.event.mapper.EventMapper;
 
 import jakarta.validation.Valid;
 
@@ -22,14 +23,22 @@ public class EventController {
 
     private final EventService eventService;
 
-    public EventController(EventService eventService) {
+    private final EventMapper eventMapper;
+
+    public EventController(EventService eventService, EventMapper eventMapper) {
         this.eventService = eventService;
+        this.eventMapper = eventMapper;
     }
-
+/*
+ * TODO:  como este metodo hace la creacion de eventos,
+ * deberia de colocarle un token que solamente
+ * pueda crearse despues de crear un negocio o
+ * firmar un contrato de vento
+ */
     @PostMapping()
-    public ResponseEntity<EventEntity> createSeats(@RequestBody CreateEventAndSeatsRequest entity) {
+    public ResponseEntity<EventResponse> createSeats(@RequestBody CreateEventAndSeatsRequest entity) {
 
-        return ResponseEntity.ok(this.eventService.createSeatsForEvent(entity));
+        return ResponseEntity.ok(eventMapper.toResponse(this.eventService.createSeatsForEvent(entity)));
     }
 
     @GetMapping(ApiConstants.EVENT_SEATS)
@@ -58,14 +67,4 @@ public class EventController {
     }
 
 }
-/*
- * 
- * | Método | Ruta | Descripción |
- * | ------ | ------------------------- |
- * --------------------------------------------------- |
- * | `POST` | `/internal/seats/hold` | Retiene una lista de asientos para una
- * reserva |
- * | `POST` | `/internal/seats/release` | Libera los asientos de una reserva |
- * | `POST` | `/internal/seats/confirm` | Pasa los asientos de una reserva de
- * `HELD` a `SOLD` |
- */
+

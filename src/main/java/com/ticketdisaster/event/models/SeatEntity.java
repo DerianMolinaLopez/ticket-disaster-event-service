@@ -23,6 +23,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.EqualsAndHashCode.Exclude;
 
 @Entity
 @Table(name = "seats")
@@ -37,6 +38,7 @@ public class SeatEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     @ToString.Exclude
+    @Exclude 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "event_id", nullable = false)
     private EventEntity event;

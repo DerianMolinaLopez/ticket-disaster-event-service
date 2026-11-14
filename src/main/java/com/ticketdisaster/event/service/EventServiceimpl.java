@@ -10,9 +10,11 @@ import com.ticketdisaster.event.dto.request.HoldSeatsRequest;
 import com.ticketdisaster.event.dto.request.LayoutRequest;
 import com.ticketdisaster.event.enums.StatusEvent;
 import com.ticketdisaster.event.enums.StatusSeat;
+import com.ticketdisaster.event.exception.TicketDisasterException;
 import com.ticketdisaster.event.interfaces.EventService;
 import com.ticketdisaster.event.interfaces.jpa.EventRepository;
 import com.ticketdisaster.event.interfaces.jpa.SeatRepository;
+import com.ticketdisaster.event.mapper.EventMapper;
 import com.ticketdisaster.event.models.EventEntity;
 import com.ticketdisaster.event.models.SeatEntity;
 
@@ -27,20 +29,19 @@ public class EventServiceimpl implements EventService {
 
     private final SeatRepository seatRepository;
 
-    public EventServiceimpl(EventRepository eventRepository, SeatRepository seatRepository) {
+    private final EventMapper eventMapper;
+
+    public EventServiceimpl(EventRepository eventRepository, SeatRepository seatRepository,EventMapper eventMapper) {
         this.eventRepository = eventRepository;
         this.seatRepository = seatRepository;
+        this.eventMapper=eventMapper;
     }
 
     @Transactional
     @Override
     public EventEntity createSeatsForEvent(CreateEventAndSeatsRequest entity) {
+        
         EventEntity eventWritten = createEvent(entity);
-
-        if (eventWritten.getId() == null) {
-            // todo disparar un error ya que no grabo
-        }
-
         List<SeatEntity> seats = createSeatEvent(entity, eventWritten);
 
         eventWritten.setSeats(seats);
@@ -50,10 +51,7 @@ public class EventServiceimpl implements EventService {
 
     private EventEntity createEvent(CreateEventAndSeatsRequest entity) {
         log.info("Intentando crear un nuevo evento: {}", entity);
-        EventEntity eventEntity = new EventEntity();
-        eventEntity.setName(entity.getName());
-        eventEntity.setName(entity.getVenue());
-        eventEntity.setStartsAt(entity.getStartsAt());
+        EventEntity eventEntity = eventMapper.toEntity(entity);
         eventEntity.setStatus(StatusEvent.COMING_SOON);
         return this.eventRepository.save(eventEntity);
     }
@@ -92,7 +90,7 @@ public class EventServiceimpl implements EventService {
         List<SeatEntity> seatsRtention = this.seatRepository.findAllById(holdSeatsRequest.getSeatIds());
         for(int i =0; i< seatsRtention.size(); i++){
             if(isHoldedorSale(seatsRtention.get(i))){
-               throw Exeption("El lugar "+seatsRtention.get(i).getSection());
+               throw new TicketDisasterException("El lugar "+seatsRtention.get(i).getSection());
             }
         }
         seatsRtention.forEach(seat -> seat.setStatus(StatusSeat.HELD));
