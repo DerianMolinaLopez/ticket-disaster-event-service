@@ -16,8 +16,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-11-14T17:38:11-0700",
-    comments = "version: 1.6.3, compiler: javac, environment: Java 25.0.5 (Red Hat, Inc.)"
+    date = "2026-11-14T18:08:46-0700",
+    comments = "version: 1.6.3, compiler: Eclipse JDT (IDE) 3.46.200.v20261008-1115, environment: Java 25.0.5 (Red Hat, Inc.)"
 )
 @Component
 public class EventMapperImpl implements EventMapper {
@@ -34,8 +34,8 @@ public class EventMapperImpl implements EventMapper {
         EventEntity eventEntity = new EventEntity();
 
         eventEntity.setName( request.getName() );
-        eventEntity.setVenue( request.getVenue() );
         eventEntity.setStartsAt( request.getStartsAt() );
+        eventEntity.setVenue( request.getVenue() );
 
         return eventEntity;
     }
