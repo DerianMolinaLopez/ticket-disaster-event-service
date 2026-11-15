@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ticketdisaster.event.enums.StatusEvent;
 
 import jakarta.persistence.CascadeType;
@@ -40,6 +41,7 @@ public class EventEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private StatusEvent status;
+    @JsonIgnore
     @ToString.Exclude
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SeatEntity> seats = new ArrayList<>();

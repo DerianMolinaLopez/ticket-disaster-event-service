@@ -6,6 +6,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +21,6 @@ import com.ticketdisaster.event.dto.response.SeatsHeldListRequest;
 import com.ticketdisaster.event.enums.StatusEvent;
 import com.ticketdisaster.event.enums.StatusSeat;
 import com.ticketdisaster.event.exception.SeatHeldException;
-import com.ticketdisaster.event.exception.TicketDisasterException;
 import com.ticketdisaster.event.interfaces.EventService;
 import com.ticketdisaster.event.interfaces.jpa.EventRepository;
 import com.ticketdisaster.event.interfaces.jpa.SeatRepository;
@@ -39,16 +41,16 @@ public class EventServiceimpl implements EventService {
 
     private final EventMapper eventMapper;
 
-    public EventServiceimpl(EventRepository eventRepository, SeatRepository seatRepository,EventMapper eventMapper) {
+    public EventServiceimpl(EventRepository eventRepository, SeatRepository seatRepository, EventMapper eventMapper) {
         this.eventRepository = eventRepository;
         this.seatRepository = seatRepository;
-        this.eventMapper=eventMapper;
+        this.eventMapper = eventMapper;
     }
 
     @Transactional
     @Override
     public EventEntity createSeatsForEvent(CreateEventAndSeatsRequest entity) {
-        
+
         EventEntity eventWritten = createEvent(entity);
         List<SeatEntity> seats = createSeatEvent(entity, eventWritten);
 
@@ -88,43 +90,58 @@ public class EventServiceimpl implements EventService {
         return seats;
     }
 
-   /*
-    * A esta altura del flujo ya eberia e estar validado
-    * si esta vacio o no
-    */
+    /*
+     * A esta altura del flujo ya eberia e estar validado
+     * si esta vacio o no
+     */
     @Transactional
     @Override
     public Response<SeatsHeldListRequest> retentionSeatsList(HoldSeatsRequest holdSeatsRequest) {
         List<SeatEntity> seatsRtention = this.seatRepository.findAllById(holdSeatsRequest.getSeatIds());
-        for(int i =0; i< seatsRtention.size(); i++){
-            if(isHeldorSale(seatsRtention.get(i))){
+        for (int i = 0; i < seatsRtention.size(); i++) {
+            if (isHeldorSale(seatsRtention.get(i))) {
                 throw SeatHeldException.builder()
-                    .message("El lugar "+seatsRtention.get(i).getNumber()+" de la seccion "+ seatsRtention.get(i).getSection()+" ya esta siendo reservado o ya fue comprado")
-                    .context("seatHeld",seatsRtention.get(i))
-                    .build();
+                        .message("El lugar " + seatsRtention.get(i).getNumber() + " de la seccion "
+                                + seatsRtention.get(i).getSection() + " ya esta siendo reservado o ya fue comprado")
+                        .context("seatHeld", seatsRtention.get(i))
+                        .build();
             }
         }
-        
+
         Instant heldUntil = Instant.now().plus(Duration.ofMinutes(holdSeatsRequest.getHoldMinutes()));
         seatsRtention.forEach(seat -> {
             seat.setStatus(StatusSeat.HELD);
             seat.setHeldBy(holdSeatsRequest.getBookingId());
             seat.setHeldUntil(heldUntil);
-            });
+        });
         SeatsHeldListRequest request = new SeatsHeldListRequest();
         request.setSeatsHeldList(seatsRtention.stream().map(SeatEntity::getId).toList());
 
         return Response.<SeatsHeldListRequest>builder()
-            .data(request)
-            .message("Se han apartado los lugares")
-            .path(ApiConstants.SEATS_HOLD)
-            .status(HttpStatus.ACCEPTED)
-            .timestamp(LocalDate.now())
-            .build();
+                .data(request)
+                .message("Se han apartado los lugares")
+                .path(ApiConstants.SEATS_HOLD)
+                .status(HttpStatus.ACCEPTED)
+                .timestamp(LocalDate.now())
+                .build();
     }
 
     private boolean isHeldorSale(SeatEntity seatEntity) {
         return seatEntity.getStatus() == StatusSeat.HELD || seatEntity.getStatus() == StatusSeat.SOLD;
+    }
+
+    @Override
+    public Response<List<EventEntity>>  getEventsPagination(Integer offset, Integer limit) {
+        int page = offset / limit;
+        Pageable pagable = PageRequest.of(page, limit);
+         Page<EventEntity> events = this.eventRepository.findAll(pagable);
+
+         return Response.<List<EventEntity>>builder().data(events.getContent())
+                 .status(HttpStatus.ACCEPTED)
+                 .message("Lista de eventos")
+                 .path(ApiConstants.EVENTS)
+                 .timestamp(LocalDate.now())
+                 .build();
     }
 
 }

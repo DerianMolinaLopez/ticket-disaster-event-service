@@ -1,5 +1,6 @@
 package com.ticketdisaster.event.mapper;
 
+import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -7,7 +8,7 @@ import com.ticketdisaster.event.dto.request.CreateEventAndSeatsRequest;
 import com.ticketdisaster.event.dto.response.EventResponse;
 import com.ticketdisaster.event.models.EventEntity;
 
-@Mapper(componentModel = "spring", uses = SeatMapper.class)
+@Mapper(componentModel = "spring", uses = SeatMapper.class, injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface EventMapper {
 
     // name, venue y startsAt convergen (mismo nombre y tipo en el DTO y en la entidad):
