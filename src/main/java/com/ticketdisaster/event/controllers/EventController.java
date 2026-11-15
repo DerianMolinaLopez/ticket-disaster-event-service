@@ -12,6 +12,8 @@ import com.ticketdisaster.event.constants.ApiConstants;
 import com.ticketdisaster.event.dto.request.CreateEventAndSeatsRequest;
 import com.ticketdisaster.event.dto.request.HoldSeatsRequest;
 import com.ticketdisaster.event.dto.response.EventResponse;
+import com.ticketdisaster.event.dto.response.Response;
+import com.ticketdisaster.event.dto.response.SeatsHeldListRequest;
 import com.ticketdisaster.event.interfaces.EventService;
 import com.ticketdisaster.event.mapper.EventMapper;
 
@@ -47,9 +49,9 @@ public class EventController {
     }
 
     @PostMapping(ApiConstants.SEATS_HOLD)
-    public String retentionSeatsList(@RequestBody @Valid HoldSeatsRequest entity) {
+    public Response<SeatsHeldListRequest> retentionSeatsList(@RequestBody @Valid HoldSeatsRequest entity) {
 
-        return "";
+        return this.eventService.retentionSeatsList(entity);
     }
 
     @PostMapping(ApiConstants.SEATS_RELEASE)

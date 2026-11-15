@@ -8,10 +8,13 @@
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/request/LayoutRequest.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/request/SeatRequest.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/response/EventResponse.java
+/home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/response/Response.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/response/SeatResponse.java
+/home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/response/SeatsHeldListRequest.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/enums/StatusEvent.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/enums/StatusSeat.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/exception/ErrorHandler.java
+/home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/exception/SeatHeldException.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/exception/TicketDisasterException.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/interfaces/EventService.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/interfaces/jpa/EventRepository.java

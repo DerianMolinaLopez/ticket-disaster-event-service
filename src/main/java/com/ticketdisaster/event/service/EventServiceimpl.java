@@ -1,15 +1,23 @@
 package com.ticketdisaster.event.service;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.ticketdisaster.event.constants.ApiConstants;
 import com.ticketdisaster.event.dto.request.CreateEventAndSeatsRequest;
 import com.ticketdisaster.event.dto.request.HoldSeatsRequest;
 import com.ticketdisaster.event.dto.request.LayoutRequest;
+import com.ticketdisaster.event.dto.response.Response;
+import com.ticketdisaster.event.dto.response.SeatsHeldListRequest;
 import com.ticketdisaster.event.enums.StatusEvent;
 import com.ticketdisaster.event.enums.StatusSeat;
+import com.ticketdisaster.event.exception.SeatHeldException;
 import com.ticketdisaster.event.exception.TicketDisasterException;
 import com.ticketdisaster.event.interfaces.EventService;
 import com.ticketdisaster.event.interfaces.jpa.EventRepository;
@@ -80,23 +88,42 @@ public class EventServiceimpl implements EventService {
         return seats;
     }
 
-    /*
-     * A esta altura del flujo ya eberia e estar validado
-     * si esta vacio o no
-     */
+   /*
+    * A esta altura del flujo ya eberia e estar validado
+    * si esta vacio o no
+    */
     @Transactional
     @Override
-    public void retentionSeatsList(HoldSeatsRequest holdSeatsRequest) {
+    public Response<SeatsHeldListRequest> retentionSeatsList(HoldSeatsRequest holdSeatsRequest) {
         List<SeatEntity> seatsRtention = this.seatRepository.findAllById(holdSeatsRequest.getSeatIds());
         for(int i =0; i< seatsRtention.size(); i++){
-            if(isHoldedorSale(seatsRtention.get(i))){
-               throw new TicketDisasterException("El lugar "+seatsRtention.get(i).getSection());
+            if(isHeldorSale(seatsRtention.get(i))){
+                throw SeatHeldException.builder()
+                    .message("El lugar "+seatsRtention.get(i).getNumber()+" de la seccion "+ seatsRtention.get(i).getSection()+" ya esta siendo reservado o ya fue comprado")
+                    .context("seatHeld",seatsRtention.get(i))
+                    .build();
             }
         }
-        seatsRtention.forEach(seat -> seat.setStatus(StatusSeat.HELD));
+        
+        Instant heldUntil = Instant.now().plus(Duration.ofMinutes(holdSeatsRequest.getHoldMinutes()));
+        seatsRtention.forEach(seat -> {
+            seat.setStatus(StatusSeat.HELD);
+            seat.setHeldBy(holdSeatsRequest.getBookingId());
+            seat.setHeldUntil(heldUntil);
+            });
+        SeatsHeldListRequest request = new SeatsHeldListRequest();
+        request.setSeatsHeldList(seatsRtention.stream().map(SeatEntity::getId).toList());
+
+        return Response.<SeatsHeldListRequest>builder()
+            .data(request)
+            .message("Se han apartado los lugares")
+            .path(ApiConstants.SEATS_HOLD)
+            .status(HttpStatus.ACCEPTED)
+            .timestamp(LocalDate.now())
+            .build();
     }
 
-    private boolean isHoldedorSale(SeatEntity seatEntity) {
+    private boolean isHeldorSale(SeatEntity seatEntity) {
         return seatEntity.getStatus() == StatusSeat.HELD || seatEntity.getStatus() == StatusSeat.SOLD;
     }
 

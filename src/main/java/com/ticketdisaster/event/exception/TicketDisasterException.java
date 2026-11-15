@@ -11,7 +11,7 @@ import lombok.Setter;
     @Setter
 public class TicketDisasterException extends RuntimeException {
 
-    private HttpStatus erroCode;
+    private HttpStatus errorCode;
     private String message;
     private Map<String,Object> context;
 
@@ -21,6 +21,6 @@ public class TicketDisasterException extends RuntimeException {
     public TicketDisasterException(HttpStatus errorCode,String message,Map<String,Object> context){
         this.context=context;
         this.message=message;
-        this.erroCode=errorCode;
+        this.errorCode=errorCode;
     }
 }
