@@ -52,9 +52,18 @@ jobs:
           set -euo pipefail
           SHA="${GITHUB_SHA::7}"
           TAG="v${VERSION}"
-          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}$"; then
-            echo "::warning::El tag ${TAG} ya existe (no subiste la version en pom.xml); se crea ${TAG}-${SHA} en su lugar."
-            TAG="${TAG}-${SHA}"
+          # Si master/dev/release aun comparten el mismo commit (p.ej. recien promovida
+          # una rama sin cambios nuevos) el fallback necesita la rama tambien, no solo el
+          # sha, porque el mismo commit puede intentar crear el mismo tag desde mas de
+          # una rama casi al mismo tiempo.
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null || git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}$"; then
+            CANDIDATE="${TAG}-${GITHUB_REF_NAME}-${SHA}"
+            if git rev-parse -q --verify "refs/tags/${CANDIDATE}" >/dev/null || git ls-remote --tags origin "refs/tags/${CANDIDATE}" | grep -q "${CANDIDATE}$"; then
+              echo "::notice::El tag ${CANDIDATE} ya existe (este commit ya se etiqueto antes); no se crea uno nuevo."
+              exit 0
+            fi
+            echo "::warning::El tag ${TAG} ya existe (no subiste la version en pom.xml); se crea ${CANDIDATE} en su lugar."
+            TAG="$CANDIDATE"
           fi
           git tag "$TAG"
           git push origin "$TAG"
