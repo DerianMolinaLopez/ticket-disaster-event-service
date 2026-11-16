@@ -109,7 +109,7 @@ jobs:
             -v trivy-cache-image:/root/.cache/trivy \
             aquasec/trivy:0.76.2 image \
               --scanners vuln,secret \
-              --severity HIGH,CRITICAL --ignore-unfixed \
+              --severity HIGH,CRITICAL --ignore-unfixed --timeout 15m \
               --exit-code 1 "$1"
 
       - name: Push al registry

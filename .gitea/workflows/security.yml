@@ -66,7 +66,7 @@ jobs:
             --entrypoint sh "$TRIVY_IMAGE" -c '
               mkdir -p /tmp/src && tar -xf - -C /tmp/src &&
               trivy fs --scanners vuln,misconfig --offline-scan \
-                --severity HIGH,CRITICAL --ignore-unfixed \
+                --severity HIGH,CRITICAL --ignore-unfixed --timeout 15m \
                 --exit-code 1 /tmp/src'
 
   sonarqube:
