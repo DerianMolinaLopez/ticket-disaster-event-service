@@ -24,6 +24,7 @@ com/ticketdisaster/event/enums/StatusSeat.class
 com/ticketdisaster/event/interfaces/jpa/SeatRepository.class
 com/ticketdisaster/event/domain/Seat.class
 com/ticketdisaster/event/exception/SeatHeldException.class
+com/ticketdisaster/event/dto/request/ReleaseSeatsHeldRequest.class
 com/ticketdisaster/event/enums/StatusEvent.class
 com/ticketdisaster/event/dto/response/SeatResponse.class
 com/ticketdisaster/event/dto/response/Response.class

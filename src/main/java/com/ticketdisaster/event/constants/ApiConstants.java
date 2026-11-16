@@ -13,6 +13,7 @@ public class ApiConstants {
 
     // Eventos
     public static final String EVENTS = "/events";
+    public static final String EVENT = "/event/{id}";
     public static final String EVENT_SEATS = EVENTS + "/{id}/seats";
 
     // Seats internos (derivados de la base)

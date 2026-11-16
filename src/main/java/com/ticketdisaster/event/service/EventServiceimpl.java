@@ -3,9 +3,13 @@ package com.ticketdisaster.event.service;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
+import com.ticketdisaster.event.dto.request.ReleaseSeatsHeldRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -144,4 +148,39 @@ public class EventServiceimpl implements EventService {
                  .build();
     }
 
+    @Override
+    public Response<EventEntity> getEventDetail(UUID id) {
+        Optional<EventEntity> eventFound = this.eventRepository.findById(id);
+        return Response.<EventEntity>builder().data(eventFound.get())
+                .message("Detalle del evento")
+                .status(HttpStatus.ACCEPTED).path(ApiConstants.EVENT).timestamp(LocalDate.now()).build();
+    }
+    @Transactional
+    @Override
+    public Response<String> releaseSeats(ReleaseSeatsHeldRequest seats) {
+        updateSeatsStatus(seats, StatusSeat.AVAILABLE);
+        return buildResponse("Se han liberado los lugares", ApiConstants.SEATS_RELEASE);
+    }
+
+    @Transactional
+    @Override
+    public Response<String> confirmReservation(ReleaseSeatsHeldRequest seats) {
+        updateSeatsStatus(seats, StatusSeat.SOLD); // o RESERVED, según tu lógica
+        return buildResponse("Reserva confirmada", ApiConstants.SEATS_CONFIRM);
+    }
+
+    private void updateSeatsStatus(ReleaseSeatsHeldRequest request, StatusSeat status) {
+        List<SeatEntity> seats = this.seatRepository
+                .findAllByIdInAndEventId(request.getListOfSeats(), request.getEventId());
+        seats.forEach(seat -> seat.setStatus(status));
+    }
+
+    private Response<String> buildResponse(String message, String path) {
+        return Response.<String>builder()
+                .data(message)
+                .message("")
+                .path(path)
+                .timestamp(LocalDate.now())
+                .build();
+    }
 }

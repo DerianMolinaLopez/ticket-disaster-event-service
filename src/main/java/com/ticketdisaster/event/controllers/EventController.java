@@ -1,14 +1,9 @@
 package com.ticketdisaster.event.controllers;
 
+import com.ticketdisaster.event.dto.request.ReleaseSeatsHeldRequest;
 import com.ticketdisaster.event.models.EventEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
 import com.ticketdisaster.event.constants.ApiConstants;
 import com.ticketdisaster.event.dto.request.CreateEventAndSeatsRequest;
 import com.ticketdisaster.event.dto.request.HoldSeatsRequest;
@@ -21,6 +16,7 @@ import com.ticketdisaster.event.mapper.EventMapper;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping(ApiConstants.API_EVENT)
@@ -35,12 +31,6 @@ public class EventController {
         this.eventMapper = eventMapper;
     }
 
-    /*
-     * TODO: como este metodo hace la creacion de eventos,
-     * deberia de colocarle un token que solamente
-     * pueda crearse despues de crear un negocio o
-     * firmar un contrato de vento
-     */
     @PostMapping()
     public ResponseEntity<EventResponse> createSeats(@RequestBody CreateEventAndSeatsRequest entity) {
 
@@ -48,9 +38,14 @@ public class EventController {
     }
 
     @GetMapping(ApiConstants.EVENTS)
-    public Response<List<EventEntity>>  getEventsPagination(@RequestParam String offset, @RequestParam String limit) {
+    public Response<List<EventEntity>>  getEventsPagination(@RequestParam(defaultValue = "0") String offset, @RequestParam(defaultValue = "10") String limit) {
         return this.eventService.getEventsPagination(Integer.valueOf(offset),Integer.valueOf(limit));
 
+    }
+    @GetMapping(ApiConstants.EVENT)
+    public Response<EventEntity> getEventDetail(@PathVariable UUID id){
+
+        return this.eventService.getEventDetail(id);
     }
 
 
@@ -66,17 +61,14 @@ public class EventController {
     }
 
     @PostMapping(ApiConstants.SEATS_RELEASE)
-    public String releaseSeats(@RequestBody String entity) {
-        // TODO: process POST request
-
-        return entity;
+    public Response<String>  releaseSeats(@RequestBody @Valid ReleaseSeatsHeldRequest seatsHeld) {
+        return this.eventService.releaseSeats(seatsHeld);
     }
 
     @PostMapping(ApiConstants.SEATS_CONFIRM)
-    public String changeStatusReservation(@RequestBody String entity) {
-        // TODO: process POST request
+    public Response<String> confirmReservation(@RequestBody @Valid ReleaseSeatsHeldRequest seatsHeld) {
 
-        return entity;
+        return this.eventService.confirmReservation(seatsHeld);
     }
 
 }

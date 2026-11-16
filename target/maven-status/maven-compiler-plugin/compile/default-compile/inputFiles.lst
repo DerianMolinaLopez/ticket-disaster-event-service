@@ -6,6 +6,7 @@
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/request/CreateEventAndSeatsRequest.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/request/HoldSeatsRequest.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/request/LayoutRequest.java
+/home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/request/ReleaseSeatsHeldRequest.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/request/SeatRequest.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/response/EventResponse.java
 /home/derianml/Documentos/vscode/ticket-disaster/event-service/src/main/java/com/ticketdisaster/event/dto/response/Response.java
