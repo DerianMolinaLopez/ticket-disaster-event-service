@@ -1,0 +1,15 @@
+# Sobreescribe application.yml solo para tests: nada de Postgres real.
+# Las migraciones de db/migration usan sintaxis exclusiva de Postgres (TIMESTAMPTZ,
+# gen_random_uuid(), generate_series, LATERAL), así que Flyway se desactiva y Hibernate
+# genera el esquema a partir de las entidades solo para esta base en memoria.
+spring:
+    datasource:
+        url: jdbc:h2:mem:events;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=ROW
+        username: sa
+        password:
+        driver-class-name: org.h2.Driver
+    flyway:
+        enabled: false
+    jpa:
+        hibernate:
+            ddl-auto: create-drop

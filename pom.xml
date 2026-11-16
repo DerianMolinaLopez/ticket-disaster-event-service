@@ -4,17 +4,33 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>com.ticketdisaster</groupId>
-		<artifactId>ticket-disaster-parent</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>4.1.2</version>
+		<relativePath/>
 	</parent>
 
+	<groupId>com.ticketdisaster</groupId>
 	<artifactId>event-service</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
 	<name>event-service</name>
 	<description>Eventos, recintos y estado de los asientos</description>
 
+	<properties>
+		<java.version>25</java.version>
+	</properties>
+
 	<dependencies>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<!-- API REST: Spring MVC + Tomcat embebido (mantiene la app escuchando en el puerto) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
