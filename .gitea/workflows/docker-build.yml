@@ -106,7 +106,7 @@ jobs:
           set -- ${{ steps.meta.outputs.refs }}
           docker run --rm --network host \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v trivy-cache-image:/root/.cache/trivy \
+            -v "trivy-cache-image-${GITHUB_REF_NAME}:/root/.cache/trivy" \
             aquasec/trivy:0.76.2 image \
               --scanners vuln,secret \
               --severity HIGH,CRITICAL --ignore-unfixed --timeout 15m \

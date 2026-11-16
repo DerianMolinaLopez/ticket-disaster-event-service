@@ -60,8 +60,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Cache de Trivy por rama: evita el "cache lock timeout" cuando dos ramas
+          # distintas se escanean en paralelo (el runner tiene 2 workers). "/" no es
+          # valido en un nombre de volumen, por eso feature/task se normalizan a "-".
+          SAFE_REF="${GITHUB_REF_NAME//\//-}"
           tar -cf - --exclude=.git . | docker run --rm -i --network host \
-            -v trivy-cache-fs:/root/.cache/trivy \
+            -v "trivy-cache-fs-${SAFE_REF}:/root/.cache/trivy" \
             -v m2-cache-trivy:/root/.m2 \
             --entrypoint sh "$TRIVY_IMAGE" -c '
               mkdir -p /tmp/src && tar -xf - -C /tmp/src &&
