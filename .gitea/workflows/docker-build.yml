@@ -1,0 +1,159 @@
+# Tag de versionamiento + build/push de imagen al registry del home lab, y espejo a GitHub.
+#
+#   Evento              Tag de git (en el propio repo)   Tags en registry:5000/ticket-disaster-event-service
+#   ------------------  -------------------------------  -----------------------------------------------------
+#   push a dev          v<version> (o v<version>-<sha>)  dev-<version>-<sha>, dev-latest
+#   push a release      v<version> (o v<version>-<sha>)  release-<version>-<sha>, release-latest     + mirror a GitHub release
+#   push a master        v<version> (o v<version>-<sha>)  master-<version>-<sha>, <version>, latest   + mirror a GitHub master
+#
+# <version> sale del pom.xml (mvn help:evaluate). El build ejecuta `mvn package` (con tests),
+# asi que si los tests fallan la imagen no se publica.
+name: docker-build
+
+on:
+  push:
+    branches: [dev, release, master]
+
+env:
+  REGISTRY: registry:5000
+  IMAGE_NAME: ticket-disaster-event-service
+  MAVEN_IMAGE: maven:3.9-eclipse-temurin-25
+  GITHUB_OWNER: DerianMolinaLopez
+  GITHUB_REPO: ticket-disaster-event-service
+
+jobs:
+  build-and-push:
+    name: build-and-push
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # se necesita el historial de tags para no chocar con uno existente
+
+      - name: Version desde el pom.xml
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(docker run --rm -i --network host -v m2-cache:/root/.m2 "$MAVEN_IMAGE" sh -c '
+              mkdir -p /tmp/src && cat > /tmp/src/pom.xml &&
+              cd /tmp/src && mvn -q -ntp help:evaluate -Dexpression=project.version -DforceStdout' < pom.xml)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Version del pom.xml: ${VERSION}"
+
+      - name: Tag de versionamiento en git
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          SHA="${GITHUB_SHA::7}"
+          TAG="v${VERSION}"
+          if git ls-remote --tags origin "refs/tags/${TAG}" | grep -q "${TAG}$"; then
+            echo "::warning::El tag ${TAG} ya existe (no subiste la version en pom.xml); se crea ${TAG}-${SHA} en su lugar."
+            TAG="${TAG}-${SHA}"
+          fi
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "Tag publicado: $TAG"
+
+      - name: Calcular tags de imagen
+        id: meta
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          SHA="${GITHUB_SHA::7}"
+          IMG="${REGISTRY}/${IMAGE_NAME}"
+          ENV_NAME="${GITHUB_REF_NAME}"
+          TAGS="${ENV_NAME}-${VERSION}-${SHA} ${ENV_NAME}-latest"
+          if [ "$ENV_NAME" = "master" ]; then
+            TAGS="$TAGS ${VERSION} latest"
+          fi
+
+          REFS=""
+          for t in $TAGS; do REFS="$REFS ${IMG}:${t}"; done
+
+          set -- $TAGS
+          echo "tag=$1"             >> "$GITHUB_OUTPUT"
+          echo "sha=${SHA}"         >> "$GITHUB_OUTPUT"
+          echo "refs=${REFS# }"     >> "$GITHUB_OUTPUT"
+          echo "Imagenes:${REFS}"
+
+      - name: Docker build (incluye mvn package + tests)
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          docker version --format 'Docker engine: {{.Server.Version}}'
+          TAG_ARGS=""
+          for r in ${{ steps.meta.outputs.refs }}; do TAG_ARGS="$TAG_ARGS -t $r"; done
+          docker build $TAG_ARGS \
+            --build-arg APP_VERSION="${VERSION}" \
+            --build-arg GIT_SHA=${{ steps.meta.outputs.sha }} \
+            --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }} \
+            .
+
+      - name: Escaneo de la imagen con Trivy (bloquea el push si hay HIGH/CRITICAL)
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -- ${{ steps.meta.outputs.refs }}
+          docker run --rm --network host \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v trivy-cache-image:/root/.cache/trivy \
+            aquasec/trivy:0.76.2 image \
+              --scanners vuln,secret \
+              --severity HIGH,CRITICAL --ignore-unfixed \
+              --exit-code 1 "$1"
+
+      - name: Push al registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          for r in ${{ steps.meta.outputs.refs }}; do docker push "$r"; done
+          {
+            echo "### Imagenes publicadas"
+            for r in ${{ steps.meta.outputs.refs }}; do
+              echo "- \`${r/registry:5000/localhost:5000}\`"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # --------------------------------------------------------------------------
+  # Espejo a GitHub: solo master y release llegan ahi (ver docs/README del lab).
+  # Usa el secreto GH_DEPLOY_KEY: una deploy key SSH con escritura SOLO en este
+  # repo de GitHub (no un PAT de la cuenta completa).
+  # --------------------------------------------------------------------------
+  mirror-to-github:
+    name: mirror-to-github
+    needs: build-and-push
+    if: github.ref_name == 'master' || github.ref_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push a GitHub por SSH (deploy key)
+        shell: bash
+        env:
+          GH_DEPLOY_KEY: ${{ secrets.GH_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_DEPLOY_KEY" ]; then
+            echo "::error::Falta el secreto GH_DEPLOY_KEY en el repo."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$GH_DEPLOY_KEY" > ~/.ssh/gh_deploy_key
+          chmod 600 ~/.ssh/gh_deploy_key
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/gh_deploy_key -o UserKnownHostsFile=~/.ssh/known_hosts"
+          git push "git@github.com:${GITHUB_OWNER}/${GITHUB_REPO}.git" "HEAD:${GITHUB_REF_NAME}"
+          echo "### Espejado a GitHub: ${GITHUB_OWNER}/${GITHUB_REPO}@${GITHUB_REF_NAME}" >> "$GITHUB_STEP_SUMMARY"
